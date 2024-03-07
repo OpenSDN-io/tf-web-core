@@ -226,7 +226,7 @@ This will redirect the request to https://node1:8143
 
 For SSL certificate, you can generate the pem file as specified in below:
 You can copy all the 3 files from contrail-web-core repo, 
-(https://github.com/tungstenfabric/tf-web-core/tree/master/keys)
+(https://github.com/opensdn-io/tf-web-core/tree/master/keys)
 And then do the below:
 $cat certrequest.csr cs-cert.pem cs-key.pem > <file_name>.pem
 
