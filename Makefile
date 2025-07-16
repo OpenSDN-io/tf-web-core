@@ -41,8 +41,7 @@ repos: $(WEBUISERVER) $(WEBUICLIENT) $(WEBUITHIRDPARTY) $(GENERATEDS) $(CONTROLL
 fetch-schemas: $(GENERATEDS) $(CONTROLLER)
 
 fetch-pkgs-prod:
-	python3 ../contrail-webui-third-party/fetch_packages.py -f ../contrail-webui-third-party/packages.xml
-	npm install -g sass
+	python ../contrail-webui-third-party/fetch_packages.py -f ../contrail-webui-third-party/packages.xml
 	make clean
 	rm -rf node_modules
 	mkdir -p node_modules
@@ -52,8 +51,8 @@ fetch-pkgs-dev:
 	make clean
 	rm -rf node_modules
 	mkdir -p node_modules
-	python3 ../contrail-webui-third-party/fetch_packages.py -f ../contrail-webui-third-party/packages.xml
-	python3 ../contrail-webui-third-party/fetch_packages.py -f ../contrail-webui-third-party/packages_dev.xml
+	python ../contrail-webui-third-party/fetch_packages.py -f ../contrail-webui-third-party/packages.xml
+	python ../contrail-webui-third-party/fetch_packages.py -f ../contrail-webui-third-party/packages_dev.xml
 	cp -rf $(THIRD_PARTY)/node_modules/* node_modules/.
 
 package:
