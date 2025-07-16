@@ -5,13 +5,6 @@
 #
 THIRD_PARTY='../contrail-webui-third-party'
 
-distro=$(cat /etc/*release | egrep '^ID=' | awk -F= '{print $2}' | tr -d \")
-sass_cmd="./node_modules/node-sass/bin/node-sass"
-if [[ "$distro" == "rocky" ]] ; then
-    sass_cmd="./node_modules/dart-sass/sass"
-    rm -rf ./node_modules/node-sass
-fi
-
 #Start - copy javascript-ipv6 node module files for IPv4/v6 address manipulations/validations
 rm -rf webroot/assets/ip
 mkdir -p webroot/assets/ip
@@ -337,10 +330,11 @@ for cssFile in `find webroot/common/ui/scss -name '*.scss' -not -name '*.unified
 do
     outputFile=${cssFile##*/}
     outputFile=${outputFile%%.scss}
-    ${sass_cmd} --load-path $PWD $cssFile > webroot/common/ui/css/${outputFile}.css
+    ./node_modules/node-sass/bin/node-sass $cssFile > webroot/common/ui/css/${outputFile}.css
 done
 
+
 # compile sass
-${sass_cmd} --load-path $PWD webroot/common/ui/scss/contrail.thirdparty.unified.scss > webroot/common/ui/css/contrail.thirdparty.unified.css
-${sass_cmd} --load-path $PWD webroot/common/ui/scss/contrail.unified.scss > webroot/common/ui/css/contrail.unified.css
+./node_modules/node-sass/bin/node-sass webroot/common/ui/scss/contrail.thirdparty.unified.scss > webroot/common/ui/css/contrail.thirdparty.unified.css
+./node_modules/node-sass/bin/node-sass webroot/common/ui/scss/contrail.unified.scss > webroot/common/ui/css/contrail.unified.css
 #End - Merging ALL CSS files
