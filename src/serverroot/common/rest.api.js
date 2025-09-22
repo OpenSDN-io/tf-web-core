@@ -212,10 +212,10 @@ APIServer.prototype.retryMakeCall = function(err, restApi, params,
         contrailService.obsoleteServiceNodeByParams(params, self.name);
         // Wait for one-time connectivity check finishes, then retry request again
         contrailService.subscribeContrailServiceOnDemand(self.name, function (serviceNode) {
-            var reqParams = commonUtils.cloneObj(params);
-            reqParams.url = serviceNode['ip-address'];
-            reqParams.port = serviceNode.port;
             if (null != serviceNode) {
+                var reqParams = commonUtils.cloneObj(params);
+                reqParams.url = serviceNode['ip-address'];
+                reqParams.port = serviceNode.port;
                 return self.makeCall(restApi, reqParams, callback, true);
             } else {
                 errorback(err, response, callback);

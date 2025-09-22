@@ -342,9 +342,9 @@ function updateContrailServiceData(statusData)
             ('ETIMEDOUT' == statusData[i].err.code) ||
             ('ENETUNREACH' == statusData[i].err.code) ||
             ('EHOSTUNREACH' == statusData[i].err.code))) {
-            data[i].status = "down";
+            statusData[i].status = "down";
         } else if (data[i]) {
-            data[i].status = "up";
+            statusData[i].status = "up";
         }
     }
     actData[serviceType] = data;
