@@ -56,31 +56,15 @@ define([
             if(tagrefs.length > 0) {
                 _.each(tagrefs, function(refs){
                     var fqName = refs.to;
-                    if((fqName[fqName.length -1].indexOf('application') > -1)) {
-                        if(editApplicationRefs === '') {
+                    if((fqName[fqName.length -1].indexOf('application=') === 0)) {
                             editApplicationRefs = fqName.join(":");
-                        } else {
-                            editApplicationRefs += ',' + fqName.join(":");
-                        }
-                    } else if((fqName[fqName.length -1].indexOf('site') > -1)) {
-                        if(editagSiteRefs === '') {
+                    } else if((fqName[fqName.length -1].indexOf('site=') === 0)) {
                             editagSiteRefs = fqName.join(":");
-                        } else {
-                            editagSiteRefs += ',' + fqName.join(":");
-                        }
-                    } else if((fqName[fqName.length -1].indexOf('deployment') > -1)) {
-                        if(editagDeploymentRefs === '') {
+                    } else if((fqName[fqName.length -1].indexOf('deployment=') === 0)) {
                             editagDeploymentRefs = fqName.join(":");
-                        } else {
-                            editagDeploymentRefs += ',' + fqName.join(":");
-                        }
-                    } else if((fqName[fqName.length -1].indexOf('tier') > -1)) {
-                        if(editagTierRefs === '') {
+                    } else if((fqName[fqName.length -1].indexOf('tier=') === 0)) {
                             editagTierRefs = fqName.join(":");
-                        } else {
-                            editagTierRefs += ',' + fqName.join(":");
-                        }
-                    } else  if((fqName[fqName.length -1].indexOf('label') > -1)) {
+                    } else  if((fqName[fqName.length -1].indexOf('label=') === 0)) {
                         if(editagLabelsRef === '') {
                             editagLabelsRef = fqName.join(":");
                         } else {
