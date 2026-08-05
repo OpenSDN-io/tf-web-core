@@ -328,6 +328,10 @@ exports.authenticate = function (req, res, appData) {
         /* Already logged */
         if (null != errorMsg) {
             errorObj['msg'] = errorMsg;
+            if (null != commonUtils.getValueByJsonPath(req, 'session;mfaReceipt',
+                                                       null, false)) {
+                errorObj['mfaRequired'] = true;
+            }
             commonUtils.handleJSONResponse(null, res, errorObj);
             return;
         }

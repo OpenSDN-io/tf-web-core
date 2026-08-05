@@ -1400,6 +1400,10 @@ if (typeof document !== 'undefined' && document) {
                     if ((null != domain) && (domain.length > 0)) {
                         postData['domain'] = domain;
                     }
+                    var totp = $("[name='totp']").val();
+                    if ((null != totp) && (totp.length > 0)) {
+                        postData['totp'] = totp;
+                    }
                     $.ajax({
                         url: orchPrefix + '/authenticate',
                         type: "POST",
@@ -1425,6 +1429,11 @@ if (typeof document !== 'undefined' && document) {
                             }
                             loadUtils.postAuthenticate(response);
                         } else {
+                            //Keystone asked for a second factor, reveal the code field
+                            if (response != null && response.mfaRequired == true) {
+                                $('#mfa_cont').show();
+                                $("[name='totp']").val('').focus();
+                            }
                             //Display login-error message
                             $('#login-error strong').text(response['msg']);
                             $('#login-error').removeClass('hide');

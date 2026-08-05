@@ -648,6 +648,18 @@ function formatV3AuthTokenData (authObj, isUnscoped)
                 }
             }
         }
+        if (null != authObj['totp']) {
+            v3data['auth']['identity']['methods'].push('totp');
+            v3data['auth']['identity']['totp'] = {
+                "user": {
+                    "domain": {
+                        "name": domain
+                    },
+                    "name": username,
+                    "passcode": authObj['totp']
+                }
+            };
+        }
     }
     if (true == isUnscoped) {
         return v3data;
@@ -773,6 +785,8 @@ function getV3TokenByAuthObj (authObj, callback)
                 tokenId = removeSpecialChars(token);
                 tokenObj['id'] = tokenId;
             }
+        } else {
+            saveMfaReceiptIfAny(authObj, response);
         }
         if (null != authObj['tenant']) {
             postData = formatV3AuthTokenData(authObj, false);
@@ -794,7 +808,22 @@ function getV3TokenByAuthObj (authObj, callback)
         } else {
             callback(err, tokenObj);
         }
-    });
+    }, authObj['headers']);
+}
+
+/* keystone answers an incomplete MFA login with 401 + a receipt naming the
+ * auth methods still missing; keep it so the next post can complete the login
+ */
+function saveMfaReceiptIfAny (authObj, response)
+{
+    var req = authObj['req'];
+    var receipt = commonUtils.getValueByJsonPath(response,
+                                                 'headers;openstack-auth-receipt',
+                                                 null, false);
+    if ((null == req) || (null == req.session) || (null == receipt)) {
+        return;
+    }
+    req.session.mfaReceipt = {'id': receipt, 'username': authObj['username']};
 }
 
 function removeSpecialChars (str)
@@ -2048,6 +2077,28 @@ function getUserRoleByProjectList (projects, userObj, callback)
     });
 }
 
+/* A receipt is bound to the user it was issued for, so ignore one left behind
+ * by somebody else on this session rather than failing the login for good
+ */
+function getMfaReceipt (req, username)
+{
+    var receipt = commonUtils.getValueByJsonPath(req, 'session;mfaReceipt',
+                                                 null, false);
+    if ((null == receipt) || (receipt['username'] != username)) {
+        return null;
+    }
+    return receipt['id'];
+}
+
+function getAuthFailureMsg (req, username, totp)
+{
+    if (null == getMfaReceipt(req, username)) {
+        return messages.error.invalid_user_pass;
+    }
+    return ((null != totp) && (totp.length)) ? messages.error.invalid_mfa_code :
+                                               messages.error.mfa_code_required;
+}
+
 function doV3Auth (req, callback)
 {
     var tokenObj = {};
@@ -2057,6 +2108,7 @@ function doV3Auth (req, callback)
         password = post.password,
         regionname = post.regionname,
         domain = post.domain,
+        totp = post.totp,
         userJSON, tokenJSON, roleJSON;
     var userCipher = null;
     var passwdCipher = null
@@ -2066,6 +2118,9 @@ function doV3Auth (req, callback)
 
     req.session.authApiVersion = 'v3';
     var userObj = {'username': username, 'password': password};
+    if ((null != totp) && (totp.length)) {
+        userObj['totp'] = totp;
+    }
     if ((null != domain) && (domain.length)) {
         userObj['domain'] = domain;
     }
@@ -2075,16 +2130,35 @@ function doV3Auth (req, callback)
     userObj['req'] = req;
     /* First send as unscoped request */
     var userPostData = formatV3AuthTokenData(userObj, isUnscoped);
+    var receipt = getMfaReceipt(req, username);
+    if ((null != userObj['totp']) && (null != receipt)) {
+        /* Step 2 of the MFA receipt flow: keystone already holds the password
+         * against the receipt, so send back the passcode only
+         */
+        delete userPostData['auth']['identity']['password'];
+        userPostData['auth']['identity']['methods'] = ['totp'];
+        userObj['headers'] = {'Openstack-Auth-Receipt': receipt};
+    }
     userObj['data'] = userPostData;
     getV3Token(userObj, function(err, tokenObj) {
         if ((null != err) || (null == tokenObj) || (null == tokenObj.id)) {
             req.session.isAuthenticated = false;
-            callback(messages.error.invalid_user_pass);
+            callback(getAuthFailureMsg(req, username, totp));
             return;
         }
+        delete req.session.mfaReceipt;
         req.session.last_token_used = {};
         tokenObj.id = removeSpecialChars(tokenObj.id);
         req.session.last_token_used = tokenObj;
+        if (null != userObj['totp']) {
+            /* passcode is one-shot: rescope by token for every request below */
+            delete userObj['password'];
+            delete userObj['totp'];
+            delete userObj['headers'];
+            userObj['tokenid'] = tokenObj.id;
+            userPostData = formatV3AuthTokenData(userObj, isUnscoped);
+            userObj['data'] = userPostData;
+        }
         sendV3PostReq({'data': userPostData, 'reqUrl':
                       global.KEYSTONE_V3_TOKEN_URL, 'req': req},
                       function(err, data) {
